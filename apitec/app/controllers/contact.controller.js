@@ -24,7 +24,9 @@ exports.create = (req,res)=>{
         });
     }else{
         const contacto = new Contact({
-            name: req.body.name|| "Anonimo"
+            name: req.body.name|| "Anonimo",
+            email: req.body.email|| "-",
+            number: req.body.number|| "-"
         })
     
         contacto.save().then(data =>{

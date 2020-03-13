@@ -68,18 +68,21 @@
 	<v-content>
 		<v-container class="fill-height" fluid>
 			<v-row align="center" justify="center">
-            <v-list>
-              <v-list-item
-                    v-for="person in contacts"
-                    :key="person._id"
-                    @click="" >
 
-                <v-list-item-content>
-                  <v-list-item-title v-text="person.name"></v-list-item-title>
-                </v-list-item-content>
+				<v-list>
+					<v-list-item v-for="person in contacts" :key="person._id" @click="">
 
-              </v-list-item>
-            </v-list>
+						<v-col class="align-center justify-space-between" cols="12">
+							<v-list-item-content>
+								<v-list-item-title v-text="person.name"></v-list-item-title>
+								<v-list-item-subtitle v-text="person.email"></v-list-item-subtitle>
+								<v-list-item-subtitle v-text="person.number"></v-list-item-subtitle>
+							</v-list-item-content>
+						</v-col>
+
+					</v-list-item>
+				</v-list>
+
 			</v-row>
 		</v-container>
 	</v-content>
@@ -88,42 +91,54 @@
 	</v-btn>
 	<v-dialog v-model="dialog" width="800px">
 		<v-card>
-			<v-card-title class="grey darken-2">
-				Create contact
-			</v-card-title>
-			<v-container>
-				<v-row class="mx-2">
-					<v-col class="align-center justify-space-between" cols="12">
-						<v-row align="center" class="mr-0">
-							<v-avatar size="40px" class="mx-3">
-								<img src="//ssl.gstatic.com/s2/oz/images/sge/grey_silhouette.png" alt="">
-							</v-avatar>
-							<v-text-field v-model="contact.name" placeholder="Name" />
-						</v-row>
-					</v-col>
-					<v-col cols="6">
-						<v-text-field prepend-icon="mdi-account-card-details-outline" placeholder="Company" />
-					</v-col>
-					<v-col cols="6">
-						<v-text-field placeholder="Job title" />
-					</v-col>
-					<v-col cols="12">
-						<v-text-field prepend-icon="mdi-mail" placeholder="Email" />
-					</v-col>
-					<v-col cols="12">
-						<v-text-field type="tel" prepend-icon="mdi-phone" placeholder="(000) 000 - 0000" />
-					</v-col>
-					<v-col cols="12">
-						<v-text-field prepend-icon="mdi-text" placeholder="Notes" />
-					</v-col>
-				</v-row>
-			</v-container>
-			<v-card-actions>
-				<v-btn text color="primary">More</v-btn>
-				<v-spacer />
-				<v-btn text color="primary" @click="dialog = false">Cancel</v-btn>
-				<v-btn text @click="saveContact">Save</v-btn>
-			</v-card-actions>
+			<v-form v-model="valid" ref="contactForm">
+				<v-card-title class="grey darken-2">
+					Create contact
+				</v-card-title>
+				<v-container>
+					<v-row class="mx-2">
+						<v-col class="align-center justify-space-between" cols="12">
+							<v-row align="center" class="mr-0">
+								<v-avatar size="40px" class="mx-3">
+									<img src="//ssl.gstatic.com/s2/oz/images/sge/grey_silhouette.png" alt="">
+								</v-avatar>
+								<v-text-field
+								v-model="contact.name"
+								:rules="nameRules"
+								placeholder="Name"
+								/>
+							</v-row>
+						</v-col>
+						<v-col cols="12">
+							<v-text-field
+							prepend-icon="mdi-mail"
+							v-model="contact.email"
+							:rules="emailRules"
+							placeholder="Email" />
+						</v-col>
+						<v-col cols="12">
+							<v-text-field
+							type="tel"
+							prepend-icon="mdi-phone"
+							v-model="contact.number"
+							placeholder="(000) 000 - 0000" />
+						</v-col>
+						<v-col cols="12">
+							<v-text-field prepend-icon="mdi-text" placeholder="Notes" />
+						</v-col>
+					</v-row>
+				</v-container>
+				<v-card-actions>
+					<v-btn text color="primary">More</v-btn>
+					<v-spacer />
+					<v-btn text color="primary" @click="dialog = false">Cancel</v-btn>
+					<v-btn text
+					@click="saveContact"
+					:disabled="!valid"
+					>
+					Save</v-btn>
+				</v-card-actions>
+			</v-form>
 		</v-card>
 	</v-dialog>
 </v-app>
@@ -136,8 +151,15 @@ export default {
 	},
 
 	data: () => ({
-    contacts: [],
-    contact: {},
+		valid: false,
+		nameRules: [
+			v => !!v || 'Name is required',
+		],
+    emailRules: [
+        v => !v || /.+@.+/.test(v) || 'E-mail must be valid'
+		],
+		contact: {},
+		contacts: [],
 		dialog: false,
 		drawer: null,
 		items: [{
@@ -207,12 +229,17 @@ export default {
 		],
 	}),
 
-  created(){
-    this.getContacts();
-  },
+	created() {
+		this.getContacts();
+	},
+	watch:{
+		dialog: function (){
+			this.$refs.contactForm.reset();
+		}
+	},
 
 	methods: {
-    getContacts(){
+		getContacts() {
 			fetch(`http://localhost:8800/contactos`, {
 				method: 'GET'
 			}).then(res => {
@@ -220,11 +247,13 @@ export default {
 					this.contacts = data;
 				})
 			});
-    },
+		},
 
 		saveContact() {
 			let data = {
-				name: this.contact.name
+				name: this.contact.name,
+				email: this.contact.email,
+				number: this.contact.number
 			}
 			fetch(`http://localhost:8800/contacto`, {
 				method: 'POST',
@@ -234,10 +263,10 @@ export default {
 				}
 			}).then(res => {
 				res.json()
-        .then((data) =>{
-					alert("Contacto Creado");
-          this.contacts.push(data);
-				})
+					.then((data) => {
+						this.contacts.push(data);
+						this.dialog = false;
+					})
 			});
 		}
 	}
