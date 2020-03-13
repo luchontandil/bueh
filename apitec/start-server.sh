@@ -15,6 +15,7 @@ fi
 # Comprobamos que todas las dependencias estan instaladas
 npm install
 
-node server.js
+# Modo developer para que lo compile cuando se modifique
+nodemon server.js
 
 exit 0
